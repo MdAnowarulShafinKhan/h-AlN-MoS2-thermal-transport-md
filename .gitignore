@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Large/restart/runtime files not intended for version control
+*.restart
+preprobe_*.restart
+ITC_seed*.restart
+screen_*.out
+log_seed*.lammps
+dump.*
+*.lammpstrj
+pdos.lammpstrj
+
+# Local reanalysis output
+ITC_reanalysis/

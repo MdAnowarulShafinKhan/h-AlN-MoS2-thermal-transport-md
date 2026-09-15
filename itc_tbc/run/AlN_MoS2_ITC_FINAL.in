@@ -1,0 +1,344 @@
+# ============================================================================
+# FINAL PUBLICATION-GRADE INPUT
+# h-AlN / h-MoS2 bilayer interfacial thermal conductance (ITC/TBC)
+# Method: controlled two-temperature preparation -> thermostat-free NVE
+#         relaxation -> energy-integral conductance analysis.
+#
+# Required files in the run directory:
+#   AlN_MoS2.lmp
+#   h-mos2.sw
+#   XN.tersoff
+#
+# Atom-type mapping in the supplied AlN_MoS2.lmp:
+#   1 S1   2 Mo1   3 S2   4 S3   5 Mo2   6 S4
+#   7 S5   8 Mo3   9 S6  10 S7  11 Mo4  12 S8
+#  13 Al  14 N
+#
+# Primary observable during the probe:
+#   dE_hot/dt = -A*G*(T_hot-T_cold),   R = 1/G
+#
+# No physical thickness is used.  The interface area is A = Lx*Ly.
+# The production data are recorded without a thermostat and without temporal
+# averaging in LAMMPS.  Non-overlapping block averaging and all fitting are
+# performed transparently in the companion Python analysis script.
+# ============================================================================
+
+# -------------------------- user-overridable defaults ------------------------
+echo				 both
+variable DATA        index AlN_MoS2.lmp
+variable SWFILE      index h-mos2.sw
+variable TERFILE     index XN.tersoff
+variable RUNID       index run01
+variable SEED        index 4928459
+
+# T0 is the target finite-system reference temperature.
+# The two preparation temperatures are atom-count/heat-capacity weighted so
+# that |T_MoS2-T_AlN|=DT0 while the classical thermal-energy-weighted
+# temperature remains approximately T0.
+variable T0          index 300.0
+variable DT0         index 50.0
+variable HOTLAYER    index MoS2
+
+# LJMODE=LB is the literature-traceable Lorentz-Berthelot baseline.
+# LJMODE=GEOM is retained for the original-UFF geometric-sigma sensitivity test.
+variable LJMODE      index LB
+variable CHI         index 1.0
+
+# Lateral replication for explicit finite-size convergence tests.
+variable NX          index 1
+variable NY          index 1
+
+# Stage durations, ps.  At dt=0.0005 ps these are converted to integer steps.
+variable NVT_PS      index 250.0
+variable NVE_EQ_PS   index 250.0
+variable PREP_PS     index 500.0
+variable PROD_PS     index 500.0
+
+# Thermostat damping time, ps.
+variable TDAMP       index 0.1
+
+# Production output interval in MD steps. 100 steps = 0.05 ps = 50 fs.
+variable OUT_EVERY   index 100
+
+# ------------------------------ basic settings -------------------------------
+units           metal
+atom_style      atomic
+dimension       3
+boundary        p p f
+newton          on
+
+timestep        0.0005
+
+read_data       ${DATA}
+replicate       ${NX} ${NY} 1
+
+# ------------------------------- atom groups ---------------------------------
+group mos2      type 1:12
+group aln       type 13 14
+group supper    type 1 4 7 10
+group slower    type 3 6 9 12
+group mo        type 2 5 8 11
+
+# ------------------------------ force field ----------------------------------
+# This hybrid construction is physically well-defined because the two many-body
+# potentials act on disjoint material subsets and LJ acts only across the
+# h-AlN/MoS2 interface.
+pair_style      hybrid sw tersoff lj/cut 10.0
+
+# 12-type MoS2 Stillinger-Weber mapping required by h-mos2.sw.
+pair_coeff      * * sw ${SWFILE} S1 Mo1 S2 S3 Mo2 S4 S5 Mo3 S6 S7 Mo4 S8 NULL NULL
+
+# h-AlN Tersoff mapping from XN.tersoff.
+pair_coeff      * * tersoff ${TERFILE} NULL NULL NULL NULL NULL NULL NULL NULL NULL NULL NULL NULL Al N
+
+# Cross-interface LJ parameters.  Epsilon is identical for LB and GEOM;
+# LJMODE changes sigma only. CHI scales epsilon only.
+if "${LJMODE} == LB" then &
+  "variable sig_SAl  equal 3.8014648303048273" &
+  "variable sig_SN   equal 3.4277328180449556" &
+  "variable sig_MoAl equal 3.3635881103388510" &
+  "variable sig_MoN  equal 2.9898560980789783" &
+  "variable LJmode_code equal 0.0" &
+elif "${LJMODE} == GEOM" &
+  "variable sig_SAl  equal 3.795841767" &
+  "variable sig_SN   equal 3.423660138" &
+  "variable sig_MoAl equal 3.301251376" &
+  "variable sig_MoN  equal 2.977564249" &
+  "variable LJmode_code equal 1.0" &
+else &
+  "print 'ERROR: LJMODE must be LB or GEOM'" &
+  "quit 1"
+
+variable eps_SAl   equal 0.0161306349*${CHI}
+variable eps_SN    equal 0.0059625264*${CHI}
+variable eps_MoAl  equal 0.0072923951*${CHI}
+variable eps_MoN   equal 0.0026955603*${CHI}
+
+# S atom types: 1,3,4,6,7,9,10,12; Mo atom types: 2,5,8,11.
+# S-Al
+pair_coeff      1  13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      3  13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      4  13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      6  13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      7  13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      9  13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      10 13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+pair_coeff      12 13 lj/cut $(v_eps_SAl) $(v_sig_SAl)
+# S-N
+pair_coeff      1  14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      3  14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      4  14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      6  14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      7  14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      9  14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      10 14 lj/cut $(v_eps_SN) $(v_sig_SN)
+pair_coeff      12 14 lj/cut $(v_eps_SN) $(v_sig_SN)
+# Mo-Al
+pair_coeff      2  13 lj/cut $(v_eps_MoAl) $(v_sig_MoAl)
+pair_coeff      5  13 lj/cut $(v_eps_MoAl) $(v_sig_MoAl)
+pair_coeff      8  13 lj/cut $(v_eps_MoAl) $(v_sig_MoAl)
+pair_coeff      11 13 lj/cut $(v_eps_MoAl) $(v_sig_MoAl)
+# Mo-N
+pair_coeff      2  14 lj/cut $(v_eps_MoN) $(v_sig_MoN)
+pair_coeff      5  14 lj/cut $(v_eps_MoN) $(v_sig_MoN)
+pair_coeff      8  14 lj/cut $(v_eps_MoN) $(v_sig_MoN)
+pair_coeff      11 14 lj/cut $(v_eps_MoN) $(v_sig_MoN)
+
+# Shift only the LJ energy to zero at r_c.  This leaves all forces and trajectories
+# unchanged but removes a bookkeeping discontinuity when a pair crosses r_c,
+# which is preferable for an energy-integral estimator.
+pair_modify     pair lj/cut shift yes
+
+neighbor        2.0 bin
+neigh_modify    delay 0 every 1 check yes
+
+# --------------------------- temperatures/energies ---------------------------
+# temp/com removes each group's rigid center-of-mass translation from its
+# temperature. It does NOT constrain the motion during NVE.
+compute T_all   all  temp/com
+compute T_mos2  mos2 temp/com
+compute T_aln   aln  temp/com
+
+# Layer-resolved energies. LAMMPS partitions pair/many-body potential energy
+# among participating atoms. The analysis therefore reports hot, cold, and
+# symmetric estimates and monitors the interfacial LJ energy explicitly.
+compute KEatom  all  ke/atom
+compute PEatom  all  pe/atom
+compute E_mos2_parts mos2 reduce sum c_KEatom c_PEatom
+compute E_aln_parts  aln  reduce sum c_KEatom c_PEatom
+variable E_mos2      equal c_E_mos2_parts[1]+c_E_mos2_parts[2]
+variable E_aln       equal c_E_aln_parts[1]+c_E_aln_parts[2]
+variable E_tot       equal etotal
+variable PE_tot      equal pe
+variable KE_tot      equal ke
+
+# Because lj/cut is used only for cross-interface pairs, this is the total
+# interfacial LJ potential-energy contribution.
+compute E_LJ     all pair lj/cut epair
+
+# Geometry diagnostics.
+compute zSup     supper reduce ave z
+compute z2Sup    supper reduce avesq z
+compute zAlN     aln    reduce ave z
+compute z2AlN    aln    reduce avesq z
+variable gap     equal c_zAlN-c_zSup
+variable rmsSup  equal sqrt(abs(c_z2Sup-c_zSup*c_zSup))
+variable rmsAlN  equal sqrt(abs(c_z2AlN-c_zAlN*c_zAlN))
+
+# Fully overlapping single planar interface: no thickness enters G or R.
+variable Area_A2 equal lx*ly
+variable Natoms  equal atoms
+
+# Layer-energy partition must sum back to the total energy (numerical diagnostic).
+variable Epart_err equal v_E_mos2+v_E_aln-v_E_tot
+
+# ------------------------------ thermo output --------------------------------
+thermo          5000
+thermo_style    custom step time cpu spcpu atoms c_T_all c_T_mos2 c_T_aln &
+                        pe ke etotal c_E_LJ v_gap v_rmsSup v_rmsAlN &
+                        fmax fnorm nbuild ndanger lx ly lz
+thermo_modify   flush yes
+
+run 0
+print "======================================================================"
+print "h-AlN/h-MoS2 ITC run: ${RUNID}"
+print "LJMODE=${LJMODE}, CHI=${CHI}, HOTLAYER=${HOTLAYER}"
+print "T0=${T0} K, DT0=${DT0} K"
+print "NX=${NX}, NY=${NY}; atoms=$(atoms:%.0f); area=$(v_Area_A2:%.8f) A^2"
+print "Initial mean surface gap=$(v_gap:%.8f) A"
+print "======================================================================"
+
+# -------------------------- coordinate minimization --------------------------
+# The commensurate in-plane box is intentionally kept fixed; a 3D pressure
+# relaxation would be contaminated by the large vacuum along z.
+# KOKKOS compatibility note: LAMMPS 22Jul2025 provides cg/kk but not fire/kk.
+# With the production command-line option -sf kk, min_style cg is automatically
+# promoted to cg/kk.  For the user's LAMMPS 22Jul2025 KOKKOS build, the
+# supported KOKKOS line-search choice is quadratic.
+min_style       cg
+min_modify      line quadratic
+minimize        0.0 1.0e-4 20000 200000
+run 0
+print "Post-minimization PE=$(pe:%.10f) eV; fmax=$(fmax:%.8g) eV/A; gap=$(v_gap:%.8f) A"
+write_data      minimized_AlN_MoS2_${RUNID}.data
+
+# ------------------------- initialize & equilibrate --------------------------
+# Remove accidental rigid translation of each sheet only at initialization.
+# No per-layer momentum removal is performed after thermalization or during the
+# NVE measurement, so physical low-frequency interlayer motion is preserved.
+velocity        all  create ${T0} ${SEED} mom yes rot no dist gaussian
+velocity        mos2 zero linear
+velocity        aln  zero linear
+
+# Global NVT equilibration at the target center temperature.
+variable NVT_STEPS equal round(${NVT_PS}/dt)
+fix EQ_NVT       all nvt temp ${T0} ${T0} ${TDAMP}
+fix_modify       EQ_NVT temp T_all
+run              $(v_NVT_STEPS:%.0f)
+unfix            EQ_NVT
+
+# Thermostat-free stability stage.
+variable NVE_EQ_STEPS equal round(${NVE_EQ_PS}/dt)
+fix EQ_NVE       all nve
+run              $(v_NVE_EQ_STEPS:%.0f)
+unfix            EQ_NVE
+
+# ---------------- controlled two-temperature preparation ---------------------
+# ----------------------------------------------------------------------
+# Heat-capacity/atom-count weighted two-temperature preparation
+#
+# Keeps:
+#   T_hot - T_cold = DT0
+#
+# and approximately keeps the classical finite-system thermal-energy
+# weighted mean at T0.  Appropriate here because both classical solids
+# have approximately similar heat capacity per atom (~3 kB/atom).
+# ----------------------------------------------------------------------
+
+variable Nmos equal count(mos2)
+variable Naln equal count(aln)
+
+if "${HOTLAYER} == MoS2" then &
+  "variable Tmos_target equal ${T0}+${DT0}*v_Naln/(v_Nmos+v_Naln)" &
+  "variable Taln_target equal ${T0}-${DT0}*v_Nmos/(v_Nmos+v_Naln)" &
+  "variable hot_code equal 0.0" &
+elif "${HOTLAYER} == AlN" &
+  "variable Tmos_target equal ${T0}-${DT0}*v_Naln/(v_Nmos+v_Naln)" &
+  "variable Taln_target equal ${T0}+${DT0}*v_Nmos/(v_Nmos+v_Naln)" &
+  "variable hot_code equal 1.0" &
+else &
+  "print 'ERROR: HOTLAYER must be MoS2 or AlN'" &
+  "quit 1"
+
+# Independent positive Langevin seeds derived deterministically from the run seed.
+variable seed_mos equal ${SEED}+104729
+variable seed_aln equal ${SEED}+209759
+
+print "Preparation weights: N_MoS2=$(v_Nmos:%.0f), N_AlN=$(v_Naln:%.0f)"
+print "Preparation targets: T_MoS2=$(v_Tmos_target:%.6f) K, T_AlN=$(v_Taln_target:%.6f) K, DeltaT=${DT0} K"
+print "Preparation Langevin seeds: MoS2=$(v_seed_mos:%.0f), AlN=$(v_seed_aln:%.0f)"
+
+# Integrate with NVE while two independent Langevin reservoirs establish the
+# controlled temperature difference. temp/com means the thermostat acts only on
+# internal thermal motion. zero yes removes net random force on each layer.
+fix INT          all nve
+fix TMOS         mos2 langevin $(v_Tmos_target) $(v_Tmos_target) ${TDAMP} $(v_seed_mos:%.0f) zero yes tally yes
+fix_modify       TMOS temp T_mos2
+fix TALN         aln  langevin $(v_Taln_target)  $(v_Taln_target)  ${TDAMP} $(v_seed_aln:%.0f) zero yes tally yes
+fix_modify       TALN temp T_aln
+
+# Preparation trace (0.5 ps resolution) for reproducibility/QC.
+variable prep_t_ps equal time
+fix PREPOUT      all ave/time 1000 1 1000 v_prep_t_ps c_T_mos2 c_T_aln f_TMOS f_TALN v_gap &
+                  v_Tmos_target v_Taln_target &
+                  file prep_${RUNID}.dat ave one format "%22.14g" &
+                  title1 "# Controlled two-temperature preparation" &
+                  title2 "# Step time_ps T_MoS2_K T_AlN_K E_Langevin_MoS2_eV E_Langevin_AlN_eV Gap_A T_MoS2_target_K T_AlN_target_K"
+
+variable PREP_STEPS equal round(${PREP_PS}/dt)
+run              $(v_PREP_STEPS:%.0f)
+
+unfix            PREPOUT
+unfix            TMOS
+unfix            TALN
+
+# IMPORTANT: do not zero each layer's momentum here.  Removing per-layer COM
+# motion after equilibration would delete physical interlayer collective motion.
+# The system is now completely thermostat-free; fix INT remains as the NVE
+# integrator for the entire production measurement.
+
+reset_timestep   0 time 0.0
+run 0
+print "NVE relaxation starts: T_MoS2=$(c_T_mos2:%.6f) K, T_AlN=$(c_T_aln:%.6f) K, T_all=$(c_T_all:%.6f) K, arithmetic_midpoint=$(0.5*(c_T_mos2+c_T_aln):%.6f) K, gap=$(v_gap:%.6f) A"
+write_restart    preprobe_${RUNID}.restart
+
+# ------------------------------- NVE probe -----------------------------------
+# OUT_EVERY=100 -> one unaveraged sample every 0.05 ps at dt=0.5 fs.
+# No thermostat and no momentum-removal fix acts during this data collection.
+# The file also stores the preparation targets and layer atom counts for
+# self-contained reproducibility and weighted-temperature quality control.
+variable t_ps       equal time
+variable T0_out     equal ${T0}
+variable DT0_out    equal ${DT0}
+variable CHI_out    equal ${CHI}
+variable SEED_out   equal ${SEED}
+
+fix OUT all ave/time ${OUT_EVERY} 1 ${OUT_EVERY} &
+  v_t_ps c_T_mos2 c_T_aln c_T_all &
+  v_E_mos2 v_E_aln v_E_tot v_PE_tot v_KE_tot c_E_LJ &
+  v_Area_A2 v_gap v_rmsSup v_rmsAlN v_Epart_err v_Natoms &
+  v_T0_out v_DT0_out v_CHI_out v_LJmode_code v_hot_code v_SEED_out &
+  v_Tmos_target v_Taln_target v_Nmos v_Naln &
+  file itc_relax_${RUNID}.dat ave one format "%22.14g" &
+  title1 "# h-AlN/h-MoS2 thermostat-free NVE interfacial thermal relaxation" &
+  title2 "# Step time_ps T_MoS2_K T_AlN_K T_all_K E_MoS2_eV E_AlN_eV Etotal_eV PEtotal_eV KEtotal_eV E_LJ_eV Area_A2 Gap_A RMS_upperS_A RMS_AlN_A Epartition_error_eV Natoms T0_target_K DT0_target_K CHI LJMODE_code HOT_code SEED T_MoS2_target_K T_AlN_target_K N_MoS2 N_AlN"
+
+variable PROD_STEPS equal round(${PROD_PS}/dt)
+run              $(v_PROD_STEPS:%.0f)
+
+unfix            OUT
+unfix            INT
+
+write_restart    ITC_${RUNID}.restart
+print "Finished ${RUNID}; production data: itc_relax_${RUNID}.dat"
+# ============================================================================

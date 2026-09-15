@@ -1,0 +1,50 @@
+h-AlN/h-MoS2 publication-grade ITC analysis
+Primary estimator: energy-integral fits of independent thermostat-free NVE trajectories
+Primary statistics: mean/SD/SEM/bootstrap CI across independent per-run G and R values
+Ensemble-average energy-integral fit: validation only; not a replacement for independent-run uncertainty
+Temperature QC: global LAMMPS T_all; arithmetic layer midpoint reported separately
+block_ps=0.5
+fit_start_ps=1.0
+fit_end_ps=None
+end_fraction=0.25
+sensitivity_end_fractions=0.5,0.4,0.3,0.25,0.2
+nominal_temp_K=300.0
+dpi=1200
+formats=png,pdf
+bootstrap_samples=10000
+input_files_and_sha256:
+  itc_relax_seed01.dat: 596ca1310cac19927f84ccbf5bee90a59a82d3a579cdbed66b488c343dc3d3df
+  itc_relax_seed02.dat: 688eca120e77ce17dc0d63dd114cc296cd279d721d1675ed9a7a13afacbdb93d
+  itc_relax_seed03.dat: 947a73b3e72fae0c61e8c1346899fe459767f543f2ad8de596b5a0a2b7810120
+  itc_relax_seed04.dat: 4e6afef43a8ce211818ef22159d942594e6790e6ac0192b3726e003e507b3094
+  itc_relax_seed05.dat: 5bc89af0986132e4d66c5e61eb8f8e5130253b278f46277cff7782201c58043d
+  itc_relax_seed06.dat: cc2491d10342322f995d8990a45ea356f107cf5766a219672594fb807f30eea4
+  itc_relax_seed07.dat: 0589a5bb7cd784e8380d5ad3120d7a5af756091e55b903eea8e79f901b9ebe60
+  itc_relax_seed08.dat: de33ad676feed7a0c10417ec64df16ad2212bed24b02b90e0bb3cf689a111711
+  itc_relax_seed09.dat: 7bcfbe404b9ddb5fa3ecb5057edbdd343252736bd450da4074b100296cebe5ad
+  itc_relax_seed10.dat: 3d2e4b9992d10862f54b9cc0e6815dd2fcf719fd0fb3ecf61bc58cc52a3e0d72
+  itc_relax_seed11.dat: 0a15126885215bdf6409bfc541689ea704e3541a472884b2702a38db52d151b4
+  itc_relax_seed12.dat: 577e7219459b343ea71687cf58de7c018c1629313ffc688a1505886eee8cc22b
+  itc_relax_seed13.dat: acd2acf0cbc14294f5ea7446db2f638ee3152738240f8904212f85ea837c7022
+  itc_relax_seed14.dat: c804d3caa38cba80c148bd18dfa6ea1ec024a85b3cc95d71499f403c5285ae09
+  itc_relax_seed15.dat: 1fadf0c7f95d5fd8c024f0f4b2cbd3c146e2c62ad18db4aefc9d5f0265e478f2
+  itc_relax_seed16.dat: 150d6cd27aa71c56f5fa5e531570bcfe1f87f892e7b0e64658cc969b6254bb1a
+  itc_relax_seed17.dat: b9f22d2f1c40b886bc1adbbb25f4327d4c4b1a16e3e0950b55a8af1e02baf140
+  itc_relax_seed18.dat: 73d16cc65f7a083edd25d8a8239f1f3d45afc2dd73fcf31ea52ca4e008fb8f5f
+  itc_relax_seed19.dat: e0fa31ed283d734624a9fafd663f7d0aa5214ae44f38fadca9612ee6f9830d31
+  itc_relax_seed20.dat: b7624af1fdc039a150fe91987990becb699527f3dac45170e7a0697b56a3ecfe
+structure_file_sha256: AlN_MoS2.lmp: e66d1f46a6fe773ffa2710901c4b0fddde3c6a173dca0dd323aa2197e5ca3f4a
+analysis_script_sha256: C:\Users\USER\Desktop\test\ITC_omp\post_processing\analyze_AlN_MoS2_ITC_FINAL.py: 7cf4e185c88873aef38d19b8251b2284c5c673e3b56add9b4012e5ea1c715720
+ensemble_figures:
+  ITC_300K_20seeds\Fig3_ensemble_DeltaT.png
+  ITC_300K_20seeds\Fig3_ensemble_DeltaT.pdf
+  ITC_300K_20seeds\Fig4_ensemble_G_R.png
+  ITC_300K_20seeds\Fig4_ensemble_G_R.pdf
+  ITC_300K_20seeds\FigS3_ensemble_QC.png
+  ITC_300K_20seeds\FigS3_ensemble_QC.pdf
+  ITC_300K_20seeds\Fig5_ensemble_energy_integral.png
+  ITC_300K_20seeds\Fig5_ensemble_energy_integral.pdf
+  ITC_300K_20seeds\FigS4_ensemble_fit_end_sensitivity.png
+  ITC_300K_20seeds\FigS4_ensemble_fit_end_sensitivity.pdf
+  ITC_300K_20seeds\Fig_MAIN_publication_summary.png
+  ITC_300K_20seeds\Fig_MAIN_publication_summary.pdf

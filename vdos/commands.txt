@@ -1,0 +1,6 @@
+export OMP_NUM_THREADS=16
+export OMP_PROC_BIND=spread
+export OMP_PLACES=cores
+lmp -sf omp -pk omp 16 -in vdos.lmp
+
+python vdos.py -i vel_pristine_300K.lammpstrj -o bilayer_pristine_300K --md-timestep-ps 0.0005 --max-lag-ps 50 --smooth-sigma-thz 0.25 --max-freq-thz 50

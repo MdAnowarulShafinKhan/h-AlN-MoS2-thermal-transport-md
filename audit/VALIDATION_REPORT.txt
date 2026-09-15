@@ -1,0 +1,18 @@
+Complete GitHub project package validation report
+Date: 2026-09-15
+
+PASS: all 20 final ITC raw trajectory SHA-256 hashes match the selected September 15 analysis_manifest.txt.
+PASS: final ITC AlN_MoS2.lmp SHA-256 matches the original analysis manifest.
+PASS: final ITC analyze_AlN_MoS2_ITC_FINAL.py SHA-256 matches the original analysis manifest.
+PASS: Python syntax compilation succeeded for the ITC analyzer, VDOS analyzer, vacancy scripts, and included NEMD conductivity post-processing scripts.
+PASS: monolayer_validation_300K.xlsx passed XLSX/ZIP container integrity testing.
+PASS: all four monolayer profile.langevin.gz files passed gzip integrity testing.
+PASS: four complete representative monolayer NEMD cases are present (AlN/MoS2 x armchair/zigzag).
+PASS: completed bilayer armchair and zigzag baseline NEMD cases include input, structures/potentials, profile.langevin, Ener_equ.dat, log.lammps, post-processing script, and figures.
+PASS: additional audited 3.7 A bilayer NEMD test is preserved.
+PASS: VDOS package includes input, structure, both potentials, analysis program, archived figure, and command record.
+PASS: standalone structure library contains AlN, MoS2, archived bilayer, and older 4.05 A bilayer files.
+PASS: no private working-storage URL or source-folder ID is present in the packaged text/documentation files.
+PASS: largest individual repository file is below 10 MiB, suitable for ordinary Git/GitHub storage.
+
+SCIENTIFIC CAVEAT: these mechanical integrity checks do not resolve the NEMD periodic-x boundary-condition issue, MoS2 SW implementation verification item, VDOS full-Hann taper issue, NEMD duration-comment errors, or hard-coded NEMD geometry/thickness issue. Those remain explicitly documented in KNOWN_LIMITATIONS.md.

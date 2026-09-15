@@ -1,0 +1,30 @@
+OFFLINE ARCHIVE CHECK
+Date: 2026-09-15
+
+Purpose:
+Confirm that the curated GitHub package is self-contained and includes the major project branches before removal of the original working storage.
+
+Included locally:
+- final 20-seed ITC/TBC production, raw data, analysis, tables and figures
+- final ITC baseline structure and force-field files
+- completed bilayer armchair and zigzag in-plane NEMD baselines
+- additional completed 3.7 A bilayer NEMD test
+- four complete representative 300 K monolayer NEMD simulations (AlN/MoS2 x armchair/zigzag)
+- raw monolayer temperature profiles preserved losslessly as .gz
+- 300 K six-length monolayer validation workbook
+- VDOS LAMMPS input, structure, potentials, analysis script, figure and command record
+- standalone structure library
+- vacancy-generation scripts and base structure
+- repository-level SHA-256 file manifest
+- scientific audit and provenance notes
+
+Intentionally not duplicated:
+- repetitive restart files
+- pre-probe restart files
+- duplicate screen output
+- redundant duplicate potentials in every prepared parameter-grid folder
+- large collections of prepared-only/unexecuted cases
+- unrelated auxiliary projects
+
+External private-storage dependency for the packaged repository: NONE
+Private-storage link required for GitHub sharing: NO

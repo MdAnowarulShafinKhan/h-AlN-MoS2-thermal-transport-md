@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+import os
+import sys
+from collections import defaultdict
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# --- User parameters ---
+x_length  = 293.85746071636784              # Å
+y_length  = 129.83563         # Å
+z_length  = 6.15               # Å
+timestep  = 0.0005            # ps
+
+profile_file = 'profile.langevin'
+ener_file    = 'Ener_equ.dat'
+
+# Sanity checks
+for fn in (profile_file, ener_file):
+    if not os.path.isfile(fn):
+        print(f"ERROR: '{fn}' not found.", file=sys.stderr)
+        sys.exit(1)
+
+# --------- Step 1: Read & average profile.langevin via dict ---------
+# Each bin index → [pos, sum_temp, count]
+bins = defaultdict(lambda: [None, 0.0, 0])
+
+with open(profile_file) as f:
+    # skip header
+    for _ in range(3):
+        next(f)
+
+    while True:
+        try:
+            hdr = next(f).split()
+        except StopIteration:
+            break
+        if len(hdr) < 2 or not hdr[0].isdigit():
+            continue
+        n_chunks = int(float(hdr[1]))
+        for _ in range(n_chunks):
+            sp = next(f).split()
+            idx  = int(sp[0])
+            pos  = float(sp[1])
+            temp = float(sp[3])
+            entry = bins[idx]
+            if entry[0] is None:
+                entry[0] = pos
+            entry[1] += temp
+            entry[2] += 1
+
+# Convert dict to sorted arrays
+sorted_idx = sorted(bins.keys())
+pos_dimless = np.array([bins[i][0] for i in sorted_idx])
+avg_temps   = np.array([bins[i][1] / bins[i][2] for i in sorted_idx])
+real_x      = pos_dimless * x_length
+
+# --------- Step 2: Fit middle region (70%) ---------
+start, end = 0.100067698716328*x_length, 0.900032301283672*x_length
+mask = (real_x >= start) & (real_x <= end)
+mid_x, mid_t = real_x[mask], avg_temps[mask]
+slope_mid, intercept_mid = np.polyfit(mid_x, mid_t, 1)
+print(f"Slope of middle region: {slope_mid:.6e} K/Å")
+
+# Plot temperature profile + mid-region fit
+plt.figure(figsize=(8,5))
+plt.plot(real_x, avg_temps, 'o', alpha=0.4, label='All bins')
+plt.plot(mid_x, mid_t, 'ro', markersize=4, label='Middle bins')
+plt.plot(mid_x, slope_mid*mid_x+intercept_mid, 'r-',
+         label=f'Fit slope={slope_mid:.3e} K/Å')
+plt.xlabel("Distance along x (Å)")
+plt.ylabel("Temperature (K)")
+plt.title("NEMD Temp. Profile & Middle-Region Fit")
+plt.grid(True)
+plt.legend()
+plt.xlim(0, x_length)
+plt.ylim(avg_temps.min()-5, avg_temps.max()+5)
+plt.tight_layout()
+plt.savefig("temp_profile_midregion.png", dpi=1200)
+plt.close()
+
+# --------- Step 3: Energy vs. time & conductivity ---------
+ener = pd.read_csv(ener_file, sep=r"\s+", comment='#', header=None,
+                   names=['step','Ehot','Ecold'], skiprows=1)
+time_ps = ener['step'].values * timestep
+Ehot    = ener['Ehot'].values
+Ecold   = ener['Ecold'].values
+
+Eflow = (np.abs(Ehot) + np.abs(Ecold)) / 2.0
+dEdt  = np.polyfit(time_ps, Eflow, 1)[0]  # eV/ps
+flux  = dEdt / (y_length * z_length)      # eV·ps⁻¹·Å⁻²
+
+kappa_ev = -flux / slope_mid              # eV·ps⁻¹·Å⁻¹·K⁻¹
+kappa_SI = kappa_ev * (1.602e-19/1e-12)/1e-10
+
+print(f"dE/dt      = {dEdt:.6e} eV/ps")
+print(f"Heat flux  = {flux:.6e} eV·ps⁻¹·Å⁻²")
+print(f"kappa      = {kappa_SI:.3f} W·m⁻¹·K⁻¹")
+
+# Plot energy
+plt.figure(figsize=(8,5))
+plt.plot(time_ps/1000, Ehot,  label='E_hot')
+plt.plot(time_ps/1000, Ecold, label='E_cold')
+plt.xlabel("Time (ns)")
+plt.ylabel("Energy (eV)")
+plt.title("Thermostat Energy vs. Time")
+plt.legend()
+plt.tight_layout()
+plt.savefig("energy_vs_time.png", dpi=1200)
+plt.close()
